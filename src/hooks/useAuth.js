@@ -1,0 +1,53 @@
+import { useState, useEffect } from "react";
+import { supabase } from "../supabase";
+
+async function loadUser(authUser) {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", authUser.id)
+    .single();
+
+  if (!profile) return null;
+
+  let business = null;
+  if (profile.role === "business") {
+    const { data: biz } = await supabase
+      .from("businesses")
+      .select("*")
+      .eq("owner_id", authUser.id)
+      .single();
+    business = biz;
+  }
+
+  return {
+    id: authUser.id,
+    email: authUser.email,
+    name: profile.name,
+    role: profile.role,
+    business,
+  };
+}
+
+export function useAuth() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
+        const u = await loadUser(session.user);
+        setUser(u);
+      }
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") setUser(null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  return { user, setUser, loading };
+}
