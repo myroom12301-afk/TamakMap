@@ -1,7 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { fmtTime } from "../utils";
 import DiscBadge from "../components/DiscBadge";
-import TimerBadge from "../components/TimerBadge";
 
 export default function DealDetail({ deal, biz: b, onBack, onBook, isLoggedIn }) {
   const saved = deal.price_before - deal.price_after;

@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Phone } from "lucide-react";
+import { MapPin, Phone } from "lucide-react";
 import DiscBadge from "./DiscBadge";
 import TimerBadge from "./TimerBadge";
 import { S } from "../constants";
