@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -39,6 +39,82 @@ function FitBounds({ businesses }) {
   return null;
 }
 
+const userIcon = L.divIcon({
+  html: `<div style="
+    width:16px; height:16px; border-radius:50%;
+    background:#2563EB; border:3px solid #fff;
+    box-shadow:0 0 0 4px rgba(37,99,235,0.25);
+    animation:pulse 1.5s infinite;
+  "></div>
+  <style>
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(37,99,235,0.4); }
+      70%  { box-shadow: 0 0 0 10px rgba(37,99,235,0); }
+      100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
+    }
+  </style>`,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+  className: "",
+});
+
+function LocateControl() {
+  const map = useMap();
+  const [locating, setLocating] = useState(false);
+  const [userPos, setUserPos] = useState(null);
+  const markerRef = useState(null);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const watcher = navigator.geolocation.watchPosition(
+      (pos) => setUserPos([pos.coords.latitude, pos.coords.longitude]),
+      () => {},
+      { enableHighAccuracy: true }
+    );
+    return () => navigator.geolocation.clearWatch(watcher);
+  }, []);
+
+  const locate = () => {
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        map.setView([pos.coords.latitude, pos.coords.longitude], 16);
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { timeout: 8000 }
+    );
+  };
+
+  return (
+    <>
+      {userPos && <Marker position={userPos} icon={userIcon} />}
+      <div style={{ position: "absolute", bottom: 12, right: 12, zIndex: 999 }}>
+        <button onClick={locate} style={{
+          width: 40, height: 40, borderRadius: 12, background: "#fff",
+          border: "1.5px solid #E5E7EB", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        }}>
+          {locating ? (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" strokeDasharray="31.4" strokeDashoffset="10">
+                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/>
+              </circle>
+            </svg>
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" fill="#16A34A"/>
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+              <circle cx="12" cy="12" r="8"/>
+            </svg>
+          )}
+        </button>
+      </div>
+    </>
+  );
+}
+
 export default function MapPage({ businesses, onBusiness }) {
   const withCoords = businesses.filter(b => b.lat && b.lng);
 
@@ -58,6 +134,7 @@ export default function MapPage({ businesses, onBusiness }) {
             attribution='&copy; OpenStreetMap'
           />
           <FitBounds businesses={withCoords} />
+          <LocateControl />
           {withCoords.map(b => (
             <Marker
               key={b.id}
