@@ -107,7 +107,7 @@ export default function AuthModal({ onClose, onLogin }) {
             </div>
             <div style={{ textAlign: "center", marginTop: 16 }}>
               <span style={{ fontSize: 13, color: "#6B7280" }}>Уже есть аккаунт? </span>
-              <button onClick={() => setStep("login")}
+              <button onClick={() => { setStep("login"); setMode("login"); }}
                 style={{ background: "none", border: "none", cursor: "pointer", color: "#16A34A", fontWeight: 800, fontSize: 13 }}>
                 Войти
               </button>

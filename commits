@@ -1,0 +1,30 @@
+[33mcommit 772d5c6c89270148cb851d5677b7f8279af8c89a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: myroom12301-afk <myroom12301@gmail.com>
+Date:   Wed Apr 22 16:55:30 2026 +0600
+
+    Structure
+
+[33mcommit 262433ace93454de071714970d4e9419a063786f[m
+Merge: aaac179 204d236
+Author: myroom12301-afk <myroom12301@gmail.com>
+Date:   Wed Apr 22 09:53:37 2026 +0600
+
+    Resolve merge conflict in .gitignore
+
+[33mcommit aaac179e8c6ac5c186687baa193835a71187a8fb[m
+Author: myroom12301-afk <myroom12301@gmail.com>
+Date:   Tue Apr 21 22:12:49 2026 +0600
+
+    Full app. MVP
+
+[33mcommit 204d236898e4f01ee8c1f4e169bdf7c9af8225eb[m
+Author: myroom12301-afk <myroom12301@gmail.com>
+Date:   Sat Apr 18 17:20:23 2026 +0600
+
+    first commit
+
+[33mcommit 94e086a3911a0e46f1c87849a063b1c0d599de31[m
+Author: myroom12301-afk <myroom12301@gmail.com>
+Date:   Sat Apr 18 17:17:57 2026 +0600
+
+    first commit
