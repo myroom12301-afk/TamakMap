@@ -11,22 +11,28 @@ async function loadUser(authUser) {
   if (!profile) return null;
 
   let business = null;
-  if (profile.role === "business") {
-    const { data: biz } = await supabase
+  let businesses = [];
+
+  if (profile.role === "owner") {
+    const { data: bizList } = await supabase
       .from("businesses")
       .select("*")
       .eq("owner_id", authUser.id)
+      .order("created_at", { ascending: true });
+    businesses = bizList || [];
+    business = businesses[0] || null;
+  }
+
+  if (profile.role === "staff") {
+    const { data: biz } = await supabase
+      .from("businesses")
+      .select("*")
+      .eq("id", profile.business_id)
       .single();
     business = biz;
   }
 
-  return {
-    id: authUser.id,
-    email: authUser.email,
-    name: profile.name,
-    role: profile.role,
-    business,
-  };
+  return { id: authUser.id, email: authUser.email, name: profile.name, role: profile.role, business, businesses };
 }
 
 export function useAuth() {

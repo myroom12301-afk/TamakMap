@@ -8,12 +8,13 @@ import { LOGO_URL } from "./constants";
 
 import AuthModal from "./components/AuthModal";
 import BookingModal from "./components/BookingModal";
+import BusinessSheet from "./components/BusinessSheet";
+import DealSheet from "./components/DealSheet";
 
 import HomePage from "./pages/HomePage";
 import MapPage from "./pages/MapPage";
 import ProfilePage from "./pages/ProfilePage";
 import BizDashboard from "./pages/BizDashboard";
-import BusinessDetail from "./pages/BusinessDetail";
 import DealDetail from "./pages/DealDetail";
 
 const NAV_ITEMS = [
@@ -27,23 +28,25 @@ export default function App() {
   const [selBiz, setSelBiz] = useState(null);
   const [selDeal, setSelDeal] = useState(null);
   const [selDealBiz, setSelDealBiz] = useState(null);
+  const [showBizSheet, setShowBizSheet] = useState(false);
+  const [showDealSheet, setShowDealSheet] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
 
   const { businesses } = useBusinesses();
 
-  const isBiz = user?.role === "business";
-  const isDetailPage = page === "biz" || page === "deal";
+  const isBiz = user?.role === "owner" || user?.role === "staff";
+  const isDetailPage = page === "deal";
   const profilePage = isBiz ? "dashboard" : "profile";
 
   const nav = [...NAV_ITEMS, { id: profilePage, label: isBiz ? "Кабинет" : "Профиль", icon: isBiz ? "📊" : "👤" }];
 
-  const goToBiz = (b) => { setSelBiz(b); setPage("biz"); };
-  const goToDeal = (d, b) => { setSelDeal(d); setSelDealBiz(b); setPage("deal"); };
-  const handleBack = () => page === "deal" && selBiz ? setPage("biz") : setPage("home");
+  const goToBiz = (b) => { setSelBiz(b); setShowBizSheet(true); };
+  const goToDeal = (d, b) => { setShowBizSheet(false); setSelDeal(d); setSelDealBiz(b); setShowDealSheet(true); };
+  const handleBack = () => { setPage("home"); };
   const handleBook = () => user ? setShowBooking(true) : setShowAuth(true);
   const handleLogout = async () => { await signOut(); setPage("home"); };
-  const handleLogin = (u) => { setUser(u); if (u.role === "business") setPage("dashboard"); };
+  const handleLogin = (u) => { setUser(u); if (u.role === "owner" || u.role === "staff") setPage("dashboard"); };
 
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "#FAFAF8" }}>
@@ -61,6 +64,7 @@ export default function App() {
         * { box-sizing: border-box; margin: 0; }
         ::-webkit-scrollbar { display: none; }
         input, select, button { font-family: inherit; }
+        .leaflet-control-attribution { display: none; }
       `}</style>
 
       {/* Header */}
@@ -101,8 +105,7 @@ export default function App() {
         {page === "home"      && <HomePage      businesses={businesses} onBusiness={goToBiz} onDeal={goToDeal} />}
         {page === "map"       && <MapPage        businesses={businesses} onBusiness={goToBiz} />}
         {page === "profile"   && <ProfilePage    user={user} onLogout={handleLogout} onLogin={() => setShowAuth(true)} />}
-        {page === "dashboard" && <BizDashboard   biz={user?.business} onLogout={handleLogout} />}
-        {page === "biz"  && selBiz  && <BusinessDetail biz={selBiz} onBack={handleBack} onDeal={goToDeal} />}
+        {page === "dashboard" && <BizDashboard   user={user} onLogout={handleLogout} onBusinessAdded={(biz) => setUser(u => ({ ...u, businesses: [...(u.businesses || []), biz], business: u.business || biz }))} />}
         {page === "deal" && selDeal && <DealDetail deal={selDeal} biz={selDealBiz || selBiz} onBack={handleBack} onBook={handleBook} isLoggedIn={!!user} />}
       </div>
 
@@ -122,8 +125,28 @@ export default function App() {
         </div>
       )}
 
+      {/* Business bottom sheet */}
+      {showBizSheet && selBiz && (
+        <BusinessSheet
+          biz={selBiz}
+          onClose={() => setShowBizSheet(false)}
+          onDeal={goToDeal}
+        />
+      )}
+
+      {/* Deal bottom sheet */}
+      {showDealSheet && selDeal && (
+        <DealSheet
+          deal={selDeal}
+          biz={selDealBiz || selBiz}
+          onClose={() => setShowDealSheet(false)}
+          onBook={handleBook}
+          isLoggedIn={!!user}
+        />
+      )}
+
       {/* Modals */}
-      {showAuth    && <AuthModal    onClose={() => setShowAuth(false)}    onLogin={handleLogin} />}
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={handleLogin} />}
       {showBooking && selDeal && (
         <BookingModal
           deal={selDeal}

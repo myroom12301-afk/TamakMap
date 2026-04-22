@@ -1,5 +1,42 @@
 import { supabase } from "../supabase";
 
+const GEOAPIFY_KEY = "dfa9d1176a6b4cb1bfc3efdff0ed5cd8";
+
+export async function geocodeAddress(address) {
+  try {
+    const res = await fetch(
+      `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(address + ", Бишкек")}&filter=countrycode:kg&lang=ru&limit=1&apiKey=${GEOAPIFY_KEY}`
+    );
+    const data = await res.json();
+    const item = data.features?.[0];
+    if (item) return { lat: item.properties.lat, lng: item.properties.lon };
+  } catch {}
+  return { lat: 42.8746, lng: 74.5698 };
+}
+
+export async function addBusiness(ownerId, biz, coords) {
+  const { data, error } = await supabase
+    .from("businesses")
+    .insert({
+      owner_id: ownerId,
+      name: biz.name,
+      type: biz.type,
+      address: biz.address,
+      district: biz.district,
+      description: biz.description,
+      phone: biz.whatsapp,
+      emoji: "🏪",
+      color: "#374151",
+      bg_color: "#F3F4F6",
+      lat: coords?.lat ?? 42.8746,
+      lng: coords?.lng ?? 74.5698,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function fetchBusinesses() {
   const { data, error } = await supabase
     .from("businesses")
