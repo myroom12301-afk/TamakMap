@@ -62,7 +62,6 @@ function LocateControl() {
   const map = useMap();
   const [locating, setLocating] = useState(false);
   const [userPos, setUserPos] = useState(null);
-  const markerRef = useState(null);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
