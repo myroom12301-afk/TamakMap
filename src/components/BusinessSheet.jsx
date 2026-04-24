@@ -45,7 +45,9 @@ export default function BusinessSheet({ biz: b, onClose, onDeal }) {
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 17, fontWeight: 900, color: "#111827" }}>{b.name}</div>
-              <div style={{ fontSize: 12, color: "#6B7280" }}>⭐ {b.rating ?? 0} · {b.reviews_count ?? 0} отзывов · {b.type}</div>
+              <div style={{ fontSize: 12, color: "#6B7280" }}>
+                {b.reviews_count > 0 ? `⭐ ${b.rating} · ${b.reviews_count} отзыв${b.reviews_count === 1 ? "" : b.reviews_count < 5 ? "а" : "ов"}` : "Нет отзывов"} · {b.type}
+              </div>
               {b.description && (
                 <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2, lineHeight: 1.4 }}>{b.description}</div>
               )}

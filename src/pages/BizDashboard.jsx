@@ -243,7 +243,7 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
               ["📢", deals.length, "Активных акций"],
               ["🛍️", bookings.filter(bk => bk.status === "active").length, "Ожидают выдачи"],
               ["💰", `${bookings.reduce((s, bk) => s + (bk.total_price || 0), 0)} сом`, "Выручка"],
-              ["🌱", `${(bookings.length * 0.3).toFixed(1)} кг`, "Спасено еды"],
+              ["✅", bookings.filter(bk => bk.status === "done").length, "Выдано"],
             ].map(([icon, val, label]) => (
               <div key={label} style={{ background: "#F8F7F4", borderRadius: 12, padding: 12, textAlign: "center" }}>
                 <div style={{ fontSize: 20, marginBottom: 2 }}>{icon}</div>

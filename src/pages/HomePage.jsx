@@ -4,7 +4,8 @@ import { CATEGORIES, S } from "../constants";
 import TimerBadge from "../components/TimerBadge";
 import DiscBadge from "../components/DiscBadge";
 
-const catEmoji = { "Пекарня": "🥐", "Кофейня": "☕", "Кафе": "🍽️", "Ресторан": "🏮" };
+const catEmoji   = { "Пекарня": "🥐", "Кофейня": "☕", "Кафе": "🍽️", "Ресторан": "🏮", "Буфет": "🥗" };
+const catPlural  = { "Пекарня": "Пекарни", "Кофейня": "Кофейни", "Кафе": "Кафе", "Ресторан": "Рестораны", "Буфет": "Буфеты" };
 
 export default function HomePage({ businesses, onBusiness, onDeal }) {
   const [filter, setFilter] = useState("Все");
@@ -90,7 +91,7 @@ export default function HomePage({ businesses, onBusiness, onDeal }) {
         {Object.entries(grouped).map(([type, bizList]) => (
           <div key={type} style={{ marginBottom: 6 }}>
             <div style={{ padding: "14px 16px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "#111827" }}>{catEmoji[type] || "🍴"} {type}ни</h2>
+              <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "#111827" }}>{catEmoji[type] || "🍴"} {catPlural[type] || type}</h2>
               <span style={{ fontSize: 12, color: "#16A34A", fontWeight: 700 }}>{bizList.length}</span>
             </div>
             <div style={{ paddingLeft: 16, paddingRight: 4, display: "flex", gap: 12, overflowX: "auto", scrollbarWidth: "none" }}>
@@ -103,7 +104,7 @@ export default function HomePage({ businesses, onBusiness, onDeal }) {
                   </div>
                   <div style={{ padding: "8px 10px 10px" }}>
                     <div style={{ fontSize: 13, fontWeight: 800, color: "#111827", marginBottom: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.name}</div>
-                    <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 6 }}>⭐ {b.rating} · {b.deals?.length ?? 0} акц.</div>
+                    <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 6 }}>{b.rating ? `⭐ ${b.rating}` : "Новое"} · {b.deals?.length ?? 0} акц.</div>
                     {b.deals?.[0] && <DiscBadge pct={b.deals[0].discount} />}
                   </div>
                 </div>

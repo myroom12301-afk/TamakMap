@@ -69,19 +69,29 @@ export async function fetchBusinesses() {
 
   const { data, error } = await supabase
     .from("businesses")
-    .select(`*, deals (*)`)
+    .select(`*, deals (*), reviews (rating)`)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
 
   const now = new Date();
-  return data.map(b => ({
-    ...b,
-    deals: (b.deals || [])
-      .filter(d => d.is_active && new Date(d.expires_at) > now)
-      .map(d => ({
-        ...d,
-        minutesLeft: Math.max(0, Math.floor((new Date(d.expires_at) - now) / 60000)),
-      })),
-  }));
+  return data.map(b => {
+    const reviews = b.reviews || [];
+    const reviews_count = reviews.length;
+    const rating = reviews_count > 0
+      ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews_count) * 10) / 10
+      : null;
+
+    return {
+      ...b,
+      rating,
+      reviews_count,
+      deals: (b.deals || [])
+        .filter(d => d.is_active && new Date(d.expires_at) > now)
+        .map(d => ({
+          ...d,
+          minutesLeft: Math.max(0, Math.floor((new Date(d.expires_at) - now) / 60000)),
+        })),
+    };
+  });
 }
