@@ -37,7 +37,36 @@ export async function addBusiness(ownerId, biz, coords) {
   return data;
 }
 
+export async function uploadBusinessCover(businessId, file) {
+  const ext = file.name.split(".").pop().toLowerCase();
+  const path = `${businessId}.${ext}`;
+
+  const { error: upErr } = await supabase.storage
+    .from("business-covers")
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (upErr) throw upErr;
+
+  const { data } = supabase.storage.from("business-covers").getPublicUrl(path);
+  const url = data.publicUrl;
+
+  const { error: updErr } = await supabase
+    .from("businesses")
+    .update({ cover_image: url })
+    .eq("id", businessId);
+  if (updErr) throw updErr;
+
+  return url;
+}
+
 export async function fetchBusinesses() {
+  // best-effort: деактивируем просроченные (молча, если нет прав)
+  supabase
+    .from("deals")
+    .update({ is_active: false })
+    .eq("is_active", true)
+    .lt("expires_at", new Date().toISOString())
+    .then(() => {}).catch(() => {});
+
   const { data, error } = await supabase
     .from("businesses")
     .select(`*, deals (*)`)

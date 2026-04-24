@@ -1,6 +1,6 @@
 export const LOGO_URL = "/logo.png";
 
-export const CATEGORIES = ["Все", "Пекарня", "Кофейня", "Кафе"];
+export const CATEGORIES = ["Все", "Пекарня", "Кофейня", "Кафе", "Ресторан", "Буфет"];
 
 export const S = {
   timerUrgent: { display: "inline-flex", alignItems: "center", gap: 3, background: "#FEE2E2", color: "#DC2626", borderRadius: 20, padding: "3px 8px", fontSize: 11, fontWeight: 700 },

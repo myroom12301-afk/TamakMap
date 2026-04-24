@@ -36,7 +36,7 @@ export async function createBooking({ userId, deal, biz, qty }) {
 export async function fetchUserBookings(userId) {
   const { data, error } = await supabase
     .from("bookings")
-    .select(`*, deals (title, time_window, price_after, price_before, expires_at), businesses (name, emoji)`)
+    .select(`*, deals (title, time_window, price_after, price_before, expires_at), businesses (name, emoji), reviews (id, rating, comment)`)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 

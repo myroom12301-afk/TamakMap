@@ -11,7 +11,20 @@ function calcExpiresAt(timeWindow) {
   return expires.toISOString();
 }
 
+export async function deactivateExpiredDeals(businessId) {
+  const query = supabase
+    .from("deals")
+    .update({ is_active: false })
+    .eq("is_active", true)
+    .lt("expires_at", new Date().toISOString());
+
+  if (businessId) query.eq("business_id", businessId);
+  await query;
+}
+
 export async function fetchDeals(businessId) {
+  await deactivateExpiredDeals(businessId);
+
   const { data, error } = await supabase
     .from("deals")
     .select("*")

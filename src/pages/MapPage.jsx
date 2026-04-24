@@ -6,19 +6,26 @@ import DiscBadge from "../components/DiscBadge";
 
 const BISHKEK = [42.8746, 74.5698];
 
-function createEmojiMarker(emoji, hasDeals) {
+function createLogoMarker(hasDeals) {
+  const badge = hasDeals
+    ? `<div style="
+        position:absolute;top:-4px;right:-7px;
+        background:#F59E0B;color:#fff;
+        border-radius:10px;padding:2px 5px;
+        font-size:9px;font-weight:900;
+        border:1.5px solid #fff;line-height:1;
+        white-space:nowrap;font-family:sans-serif;
+        box-shadow:0 1px 4px rgba(0,0,0,0.22);
+      ">АКЦИЯ</div>`
+    : "";
   return L.divIcon({
-    html: `
-      <div style="
-        width:44px; height:44px; border-radius:50%;
-        background:#fff; border:3px solid ${hasDeals ? "#F59E0B" : "#E5E7EB"};
-        display:flex; align-items:center; justify-content:center;
-        font-size:22px; box-shadow:0 2px 8px rgba(0,0,0,0.25);
-        cursor:pointer;
-      ">${emoji}</div>`,
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
-    popupAnchor: [0, -24],
+    html: `<div style="position:relative;width:72px;height:72px;">
+      <img src="/logo.png" style="width:72px;height:72px;" draggable="false"/>
+      ${badge}
+    </div>`,
+    iconSize: [72, 72],
+    iconAnchor: [36, 72],
+    popupAnchor: [0, -76],
     className: "",
   });
 }
@@ -115,7 +122,8 @@ function LocateControl() {
 }
 
 export default function MapPage({ businesses, onBusiness }) {
-  const withCoords = businesses.filter(b => b.lat && b.lng);
+  const sorted = [...businesses].sort((a, b) => (b.deals?.length > 0 ? 1 : 0) - (a.deals?.length > 0 ? 1 : 0));
+  const withCoords = sorted.filter(b => b.lat && b.lng);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 112px)" }}>
@@ -138,7 +146,7 @@ export default function MapPage({ businesses, onBusiness }) {
             <Marker
               key={b.id}
               position={[b.lat, b.lng]}
-              icon={createEmojiMarker(b.emoji, b.deals?.length > 0)}
+              icon={createLogoMarker(b.deals?.length > 0)}
             >
               <Popup>
                 <div style={{ minWidth: 140, fontFamily: "Nunito, sans-serif" }}>
@@ -176,12 +184,12 @@ export default function MapPage({ businesses, onBusiness }) {
         <div style={{ padding: "10px 16px 4px", fontSize: 12, fontWeight: 800, color: "#9CA3AF", letterSpacing: 0.5 }}>
           РЯДОМ С ВАМИ
         </div>
-        {businesses.length === 0 && (
+        {sorted.length === 0 && (
           <div style={{ textAlign: "center", padding: "32px", color: "#9CA3AF", fontSize: 14 }}>
             Нет заведений рядом
           </div>
         )}
-        {businesses.map(b => (
+        {sorted.map(b => (
           <div key={b.id} onClick={() => onBusiness(b)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", borderBottom: "1px solid #F8F7F4", cursor: "pointer" }}>
             <div style={{ width: 44, height: 44, background: b.bg_color, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>
               {b.emoji}

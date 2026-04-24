@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 68">
+  <defs>
+    <linearGradient id="pg" x1="25%" y1="0%" x2="75%" y2="100%">
+      <stop offset="0%"   stop-color="#F0C040"/>
+      <stop offset="42%"  stop-color="#D08C10"/>
+      <stop offset="100%" stop-color="#8A5508"/>
+    </linearGradient>
+    <linearGradient id="gr" x1="15%" y1="10%" x2="85%" y2="90%">
+      <stop offset="0%"   stop-color="#F8D458"/>
+      <stop offset="50%"  stop-color="#C08010"/>
+      <stop offset="100%" stop-color="#F8D458"/>
+    </linearGradient>
+    <radialGradient id="cb" cx="38%" cy="32%" r="68%">
+      <stop offset="0%"   stop-color="#38A0E0"/>
+      <stop offset="100%" stop-color="#0A508A"/>
+    </radialGradient>
+    <radialGradient id="bowl" cx="40%" cy="30%" r="70%">
+      <stop offset="0%"   stop-color="#F09040"/>
+      <stop offset="100%" stop-color="#C06018"/>
+    </radialGradient>
+    <clipPath id="cc"><circle cx="26" cy="24" r="17.5"/></clipPath>
+  </defs>
+
+  <!-- Drop shadow -->
+  <ellipse cx="26" cy="66.5" rx="9" ry="2.5" fill="rgba(0,0,0,0.22)"/>
+
+  <!-- Outer dark stroke of pin -->
+  <path d="M26 1 C11 1 2 11 2 25 C2 41 26 67 26 67
+           C26 67 50 41 50 25 C50 11 41 1 26 1Z"
+        fill="#1E0C02"/>
+
+  <!-- Pin body golden -->
+  <path d="M26 4 C13 4 5 14 5 25 C5 40.5 26 65 26 65
+           C26 65 47 40.5 47 25 C47 14 39 4 26 4Z"
+        fill="url(#pg)"/>
+
+  <!-- Inner highlight line on pin -->
+  <path d="M26 7 C15.5 7 8 16.5 8 25 C8 39.5 26 63 26 63
+           C26 63 44 39.5 44 25 C44 16.5 36.5 7 26 7Z"
+        fill="none" stroke="#F8DC60" stroke-width="0.9" opacity="0.4"/>
+
+  <!-- Outer dark ring -->
+  <circle cx="26" cy="24" r="21"   fill="#1A0A02"/>
+  <!-- Gold ring -->
+  <circle cx="26" cy="24" r="20"   fill="url(#gr)"/>
+  <!-- Inner dark ring -->
+  <circle cx="26" cy="24" r="18.5" fill="#1A0A02"/>
+  <!-- Blue interior -->
+  <circle cx="26" cy="24" r="17.5" fill="url(#cb)"/>
+
+  <!-- Diagonal grid pattern clipped to circle -->
+  <g clip-path="url(#cc)" opacity="0.5" stroke="#063050" stroke-width="2.8">
+    <line x1="4"  y1="7"  x2="48" y2="41"/>
+    <line x1="9"  y1="7"  x2="48" y2="36"/>
+    <line x1="14" y1="7"  x2="48" y2="31"/>
+    <line x1="19" y1="7"  x2="48" y2="26"/>
+    <line x1="24" y1="7"  x2="48" y2="21"/>
+    <line x1="29" y1="7"  x2="48" y2="16"/>
+    <line x1="34" y1="7"  x2="48" y2="11"/>
+    <line x1="4"  y1="11" x2="44" y2="41"/>
+    <line x1="4"  y1="16" x2="39" y2="41"/>
+    <line x1="4"  y1="21" x2="34" y2="41"/>
+    <line x1="4"  y1="26" x2="29" y2="41"/>
+    <line x1="4"  y1="31" x2="24" y2="41"/>
+    <line x1="4"  y1="36" x2="19" y2="41"/>
+  </g>
+
+  <!-- Golden steam wisps (behind bowl) -->
+  <path d="M19 15 Q16.5 11.5 19 8"  fill="none" stroke="#D4A018" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M26 14 Q23.5 10.5 26 7"  fill="none" stroke="#D4A018" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M33 15 Q30.5 11.5 33 8"  fill="none" stroke="#D4A018" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- Bowl dark lower body -->
+  <path d="M12 29 Q14 41 26 41 Q38 41 40 29Z" fill="#5A2808"/>
+
+  <!-- Bowl base rim -->
+  <ellipse cx="26" cy="40.5" rx="11" ry="2.8" fill="#3E1A04"/>
+
+  <!-- Food surface (noodles) -->
+  <ellipse cx="26" cy="23.5" rx="13.5" ry="5.5" fill="#F2B828"/>
+
+  <!-- Noodle swirl -->
+  <path d="M14 23 Q20 17 26 23 Q30 27.5 35 21"
+        fill="none" stroke="#F8DC60" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M17 25.5 Q22 21 27 25"
+        fill="none" stroke="#F8DC60" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Dollar coin -->
+  <circle cx="21.5" cy="19.5" r="4.5" fill="#C88C10" stroke="#1E0C02" stroke-width="0.9"/>
+  <circle cx="21.5" cy="19.5" r="3.5" fill="#E0A818"/>
+  <line   x1="21.5" y1="16"   x2="21.5" y2="23"  stroke="#1E0C02" stroke-width="1.3" stroke-linecap="round"/>
+  <path   d="M19 18 Q21.5 16.5 24 18"  fill="none" stroke="#1E0C02" stroke-width="1.1" stroke-linecap="round"/>
+  <path   d="M19 21 Q21.5 22.5 24 21"  fill="none" stroke="#1E0C02" stroke-width="1.1" stroke-linecap="round"/>
+
+  <!-- Broccoli stem -->
+  <rect x="31" y="22" width="3" height="4" rx="1" fill="#1E5C10"/>
+  <!-- Broccoli head -->
+  <circle cx="30"   cy="20"   r="2.8" fill="#2A7818"/>
+  <circle cx="32.5" cy="19.5" r="2.5" fill="#309020"/>
+  <circle cx="31"   cy="17.5" r="2.3" fill="#40AA28"/>
+  <circle cx="33.5" cy="18.5" r="2"   fill="#3CAA24"/>
+
+  <!-- Orange bowl front body (covers bottom of food ellipse) -->
+  <path d="M12 27 Q13 35 26 35 Q39 35 40 27
+           Q38 23 26 23 Q14 23 12 27Z"
+        fill="url(#bowl)"/>
+
+  <!-- Bowl front rim highlight -->
+  <ellipse cx="26" cy="27" rx="14.5" ry="2.5" fill="#F0A040" opacity="0.5"/>
+
+  <!-- Bowl face: closed happy eyes (^-^) -->
+  <path d="M19.5 30 Q21 28 22.5 30" fill="none" stroke="#1E0C02" stroke-width="1.7" stroke-linecap="round"/>
+  <path d="M29.5 30 Q31 28 32.5 30" fill="none" stroke="#1E0C02" stroke-width="1.7" stroke-linecap="round"/>
+
+  <!-- Smile -->
+  <path d="M20.5 33.5 Q26 38.5 31.5 33.5"
+        fill="none" stroke="#1E0C02" stroke-width="1.8" stroke-linecap="round"/>
+</svg>

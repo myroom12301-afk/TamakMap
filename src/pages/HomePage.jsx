@@ -96,7 +96,11 @@ export default function HomePage({ businesses, onBusiness, onDeal }) {
             <div style={{ paddingLeft: 16, paddingRight: 4, display: "flex", gap: 12, overflowX: "auto", scrollbarWidth: "none" }}>
               {bizList.map(b => (
                 <div key={b.id} onClick={() => onBusiness(b)} style={{ ...S.card, flexShrink: 0, width: 155 }}>
-                  <div style={{ height: 64, background: b.bg_color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30 }}>{b.emoji}</div>
+                  <div style={{ height: 64, background: b.bg_color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, overflow: "hidden", position: "relative" }}>
+                    {b.cover_image
+                      ? <img src={b.cover_image} alt={b.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : b.emoji}
+                  </div>
                   <div style={{ padding: "8px 10px 10px" }}>
                     <div style={{ fontSize: 13, fontWeight: 800, color: "#111827", marginBottom: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.name}</div>
                     <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 6 }}>⭐ {b.rating} · {b.deals?.length ?? 0} акц.</div>

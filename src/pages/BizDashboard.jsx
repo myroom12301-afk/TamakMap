@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { fetchDeals, createDeal, deleteDeal } from "../api/deals";
-import { addBusiness } from "../api/businesses";
+import { addBusiness, uploadBusinessCover } from "../api/businesses";
 import { createInviteCode, fetchInviteCodes } from "../api/invites";
 import { useBusinessBookings } from "../hooks/useBusinessBookings";
 import { markBookingDone } from "../api/bookings";
@@ -39,6 +39,13 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
 
   const [codes, setCodes] = useState([]);
   const [codesLoading, setCodesLoading] = useState(false);
+  const [confirmBooking, setConfirmBooking] = useState(null);
+
+  const [coverPreview, setCoverPreview] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverError, setCoverError] = useState("");
+  const fileInputRef = useRef(null);
 
   const [showAddBiz, setShowAddBiz] = useState(false);
   const [bizForm, setBizForm] = useState(emptyBizForm);
@@ -102,6 +109,29 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
       setCodes([code, ...codes]);
     } catch (e) {
       alert(e.message);
+    }
+  };
+
+  const handleCoverChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) { setCoverError("Файл слишком большой. Максимум 3 МБ"); return; }
+    setCoverError("");
+    setCoverFile(file);
+    setCoverPreview(URL.createObjectURL(file));
+  };
+
+  const handleCoverUpload = async () => {
+    if (!coverFile || !b?.id) return;
+    setCoverUploading(true);
+    setCoverError("");
+    try {
+      await uploadBusinessCover(b.id, coverFile);
+      setCoverFile(null);
+    } catch (e) {
+      setCoverError(e.message);
+    } finally {
+      setCoverUploading(false);
     }
   };
 
@@ -222,6 +252,62 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
               </div>
             ))}
           </div>
+          {/* Фото заведения */}
+          <div style={{ background: "#F8F7F4", borderRadius: 14, padding: 14, marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#374151", marginBottom: 4 }}>📸 Фото заведения</div>
+            <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 10 }}>
+              Рекомендуемый размер: <strong>800 × 400 px</strong> · Форматы: JPG, PNG · Не более 3 МБ
+            </div>
+
+            {/* Превью */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                width: "100%", height: 120, borderRadius: 10, overflow: "hidden",
+                background: "#E5E7EB", cursor: "pointer", marginBottom: 10,
+                border: "2px dashed #D1D5DB", display: "flex", alignItems: "center", justifyContent: "center",
+                position: "relative",
+              }}
+            >
+              {(coverPreview || b.cover_image) ? (
+                <img
+                  src={coverPreview || b.cover_image}
+                  alt="cover"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : (
+                <div style={{ textAlign: "center", color: "#9CA3AF" }}>
+                  <div style={{ fontSize: 28, marginBottom: 4 }}>🖼️</div>
+                  <div style={{ fontSize: 12, fontWeight: 700 }}>Нажмите чтобы выбрать</div>
+                </div>
+              )}
+              {(coverPreview || b.cover_image) && (
+                <div style={{ position: "absolute", bottom: 6, right: 6, background: "rgba(0,0,0,0.5)", color: "#fff", borderRadius: 8, padding: "3px 8px", fontSize: 11, fontWeight: 700 }}>
+                  Изменить
+                </div>
+              )}
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{ display: "none" }}
+              onChange={handleCoverChange}
+            />
+
+            {coverError && <p style={{ color: "#DC2626", fontSize: 12, marginBottom: 8 }}>{coverError}</p>}
+
+            {coverFile && (
+              <button onClick={handleCoverUpload} disabled={coverUploading} style={{
+                width: "100%", padding: "9px", background: coverUploading ? "#9CA3AF" : "#16A34A",
+                color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 800, cursor: coverUploading ? "not-allowed" : "pointer",
+              }}>
+                {coverUploading ? "Загрузка..." : "Сохранить фото"}
+              </button>
+            )}
+          </div>
+
           <button onClick={() => { setTab("deals"); setShowForm(true); }} style={{ width: "100%", padding: "14px", background: "#16A34A", color: "#fff", border: "none", borderRadius: 14, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
             + Создать акцию
           </button>
@@ -309,7 +395,7 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 12, color: "#6B7280" }}>🕐 {bk.deals?.time_window} · ×{bk.qty} · <strong style={{ color: "#111827" }}>{bk.total_price} сом</strong></span>
                 {bk.status === "active" && (
-                  <button onClick={() => handleMarkDone(bk.id)} style={{ background: "#16A34A", color: "#fff", border: "none", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Выдать</button>
+                  <button onClick={() => setConfirmBooking(bk)} style={{ background: "#16A34A", color: "#fff", border: "none", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Выдать</button>
                 )}
               </div>
             </div>
@@ -341,6 +427,33 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
               </span>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Подтверждение выдачи */}
+      {confirmBooking && (
+        <div onClick={() => setConfirmBooking(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 500, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "24px 24px 0 0", padding: "28px 24px 40px", width: "100%", maxWidth: 480 }}>
+            <div style={{ textAlign: "center", marginBottom: 20 }}>
+              <div style={{ fontSize: 40, marginBottom: 10 }}>✅</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#111827", marginBottom: 6 }}>Подтвердить выдачу?</div>
+              <div style={{ fontSize: 13, color: "#6B7280" }}>{confirmBooking.profiles?.name} · {confirmBooking.deals?.title}</div>
+            </div>
+            <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 12, padding: "12px 16px", marginBottom: 20, textAlign: "center" }}>
+              <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 4 }}>КОД КЛИЕНТА</div>
+              <div style={{ fontSize: 26, fontWeight: 900, color: "#16A34A", letterSpacing: 3, fontFamily: "monospace" }}>{confirmBooking.code}</div>
+              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 4 }}>×{confirmBooking.qty} шт. · {confirmBooking.total_price} сом</div>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setConfirmBooking(null)} style={{ flex: 1, padding: 14, background: "#F3F4F6", color: "#374151", border: "none", borderRadius: 14, fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
+                Отмена
+              </button>
+              <button onClick={() => { handleMarkDone(confirmBooking.id); setConfirmBooking(null); }}
+                style={{ flex: 2, padding: 14, background: "#16A34A", color: "#fff", border: "none", borderRadius: 14, fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
+                Выдать ✓
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
