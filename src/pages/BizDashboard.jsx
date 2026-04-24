@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { fetchDeals, createDeal, deleteDeal } from "../api/deals";
-import { addBusiness, uploadBusinessCover } from "../api/businesses";
+import { addBusiness, uploadBusinessCover, uploadBusinessLogo } from "../api/businesses";
 import { createInviteCode, fetchInviteCodes } from "../api/invites";
 import { useBusinessBookings } from "../hooks/useBusinessBookings";
 import { markBookingDone } from "../api/bookings";
@@ -14,7 +14,66 @@ const OWNER_TABS = [
   { id: "deals", label: "Акции" },
   { id: "bookings", label: "Брони" },
   { id: "codes", label: "Коды" },
+  { id: "photos", label: "Фото" },
 ];
+
+function PhotoUploader({ label, hint, currentUrl, aspectSquare, onSave }) {
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const ref = useRef(null);
+
+  const handleFile = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 3 * 1024 * 1024) { setError("Файл слишком большой. Максимум 3 МБ"); return; }
+    setError(""); setFile(f); setPreview(URL.createObjectURL(f));
+  };
+
+  const handleSave = async () => {
+    setUploading(true); setError("");
+    try { await onSave(file); setFile(null); setPreview(null); }
+    catch (e) { setError(e.message); }
+    finally { setUploading(false); }
+  };
+
+  const url = preview || currentUrl;
+  const w = aspectSquare ? 80 : "100%";
+  const h = aspectSquare ? 80 : 110;
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 12, fontWeight: 800, color: "#374151", marginBottom: 3 }}>{label}</div>
+      {hint && <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 8 }}>{hint}</div>}
+      <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: "none" }} onChange={handleFile} />
+      <div onClick={() => ref.current?.click()} style={{
+        width: w, height: h, borderRadius: aspectSquare ? 14 : 10, overflow: "hidden",
+        background: "#E5E7EB", cursor: "pointer", border: "2px dashed #D1D5DB",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        position: "relative", marginBottom: 8,
+      }}>
+        {url
+          ? <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          : <div style={{ textAlign: "center", color: "#9CA3AF" }}>
+              <div style={{ fontSize: aspectSquare ? 22 : 26, marginBottom: 2 }}>🖼️</div>
+              {!aspectSquare && <div style={{ fontSize: 11, fontWeight: 700 }}>Нажмите чтобы выбрать</div>}
+            </div>
+        }
+        {url && <div style={{ position: "absolute", bottom: 4, right: 4, background: "rgba(0,0,0,0.5)", color: "#fff", borderRadius: 6, padding: "2px 6px", fontSize: 10, fontWeight: 700 }}>Изменить</div>}
+      </div>
+      {error && <p style={{ color: "#DC2626", fontSize: 11, marginBottom: 6 }}>{error}</p>}
+      {file && (
+        <button onClick={handleSave} disabled={uploading} style={{
+          width: w, padding: "7px", background: uploading ? "#9CA3AF" : "#16A34A",
+          color: "#fff", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: uploading ? "not-allowed" : "pointer",
+        }}>
+          {uploading ? "Загрузка..." : "Сохранить"}
+        </button>
+      )}
+    </div>
+  );
+}
 
 const STAFF_TABS = [
   { id: "overview", label: "Главная" },
@@ -41,11 +100,8 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
   const [codesLoading, setCodesLoading] = useState(false);
   const [confirmBooking, setConfirmBooking] = useState(null);
 
-  const [coverPreview, setCoverPreview] = useState(null);
-  const [coverFile, setCoverFile] = useState(null);
-  const [coverUploading, setCoverUploading] = useState(false);
-  const [coverError, setCoverError] = useState("");
-  const fileInputRef = useRef(null);
+  const [pickedBiz, setPickedBiz] = useState(null);
+  const [showBizPicker, setShowBizPicker] = useState(false);
 
   const [showAddBiz, setShowAddBiz] = useState(false);
   const [bizForm, setBizForm] = useState(emptyBizForm);
@@ -109,29 +165,6 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
       setCodes([code, ...codes]);
     } catch (e) {
       alert(e.message);
-    }
-  };
-
-  const handleCoverChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 3 * 1024 * 1024) { setCoverError("Файл слишком большой. Максимум 3 МБ"); return; }
-    setCoverError("");
-    setCoverFile(file);
-    setCoverPreview(URL.createObjectURL(file));
-  };
-
-  const handleCoverUpload = async () => {
-    if (!coverFile || !b?.id) return;
-    setCoverUploading(true);
-    setCoverError("");
-    try {
-      await uploadBusinessCover(b.id, coverFile);
-      setCoverFile(null);
-    } catch (e) {
-      setCoverError(e.message);
-    } finally {
-      setCoverUploading(false);
     }
   };
 
@@ -252,62 +285,6 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
               </div>
             ))}
           </div>
-          {/* Фото заведения */}
-          <div style={{ background: "#F8F7F4", borderRadius: 14, padding: 14, marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#374151", marginBottom: 4 }}>📸 Фото заведения</div>
-            <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 10 }}>
-              Рекомендуемый размер: <strong>800 × 400 px</strong> · Форматы: JPG, PNG · Не более 3 МБ
-            </div>
-
-            {/* Превью */}
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                width: "100%", height: 120, borderRadius: 10, overflow: "hidden",
-                background: "#E5E7EB", cursor: "pointer", marginBottom: 10,
-                border: "2px dashed #D1D5DB", display: "flex", alignItems: "center", justifyContent: "center",
-                position: "relative",
-              }}
-            >
-              {(coverPreview || b.cover_image) ? (
-                <img
-                  src={coverPreview || b.cover_image}
-                  alt="cover"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              ) : (
-                <div style={{ textAlign: "center", color: "#9CA3AF" }}>
-                  <div style={{ fontSize: 28, marginBottom: 4 }}>🖼️</div>
-                  <div style={{ fontSize: 12, fontWeight: 700 }}>Нажмите чтобы выбрать</div>
-                </div>
-              )}
-              {(coverPreview || b.cover_image) && (
-                <div style={{ position: "absolute", bottom: 6, right: 6, background: "rgba(0,0,0,0.5)", color: "#fff", borderRadius: 8, padding: "3px 8px", fontSize: 11, fontWeight: 700 }}>
-                  Изменить
-                </div>
-              )}
-            </div>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              style={{ display: "none" }}
-              onChange={handleCoverChange}
-            />
-
-            {coverError && <p style={{ color: "#DC2626", fontSize: 12, marginBottom: 8 }}>{coverError}</p>}
-
-            {coverFile && (
-              <button onClick={handleCoverUpload} disabled={coverUploading} style={{
-                width: "100%", padding: "9px", background: coverUploading ? "#9CA3AF" : "#16A34A",
-                color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 800, cursor: coverUploading ? "not-allowed" : "pointer",
-              }}>
-                {coverUploading ? "Загрузка..." : "Сохранить фото"}
-              </button>
-            )}
-          </div>
-
           <button onClick={() => { setTab("deals"); setShowForm(true); }} style={{ width: "100%", padding: "14px", background: "#16A34A", color: "#fff", border: "none", borderRadius: 14, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
             + Создать акцию
           </button>
@@ -427,6 +404,87 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
               </span>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Фото */}
+      {tab === "photos" && (
+        <div style={{ padding: 16 }}>
+
+          {/* Для всех точек */}
+          <div style={{ background: "#F8F7F4", borderRadius: 14, padding: 14, marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#374151", marginBottom: 2 }}>🌐 Для всех точек</div>
+            <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 12 }}>
+              Фото применится ко всем {businesses.length} точк{businesses.length === 1 ? "е" : businesses.length < 5 ? "ам" : "ам"} сразу
+            </div>
+            <PhotoUploader
+              label="📸 Обложка (баннер)"
+              hint="800 × 400 px · JPG, PNG · до 3 МБ"
+              onSave={(file) => Promise.all(businesses.map(biz => uploadBusinessCover(biz.id, file)))}
+            />
+            <PhotoUploader
+              label="🏷️ Логотип"
+              hint="400 × 400 px · JPG, PNG · до 3 МБ"
+              aspectSquare
+              onSave={(file) => Promise.all(businesses.map(biz => uploadBusinessLogo(biz.id, file)))}
+            />
+          </div>
+
+          {/* Для отдельной точки */}
+          <div style={{ background: "#F8F7F4", borderRadius: 14, padding: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#374151", marginBottom: 2 }}>📍 Для отдельной точки</div>
+            <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 10 }}>Загрузите отдельные фото для конкретного заведения</div>
+
+            <button
+              onClick={() => setShowBizPicker(p => !p)}
+              style={{ width: "100%", padding: "9px", background: "#fff", border: "1px solid #E5E7EB", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#374151", marginBottom: 10, textAlign: "left" }}
+            >
+              {pickedBiz ? `✏️ ${pickedBiz.name}` : "Выбрать точку →"}
+            </button>
+
+            {showBizPicker && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+                {businesses.map(biz => (
+                  <button key={biz.id} onClick={() => { setPickedBiz(biz); setShowBizPicker(false); }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+                      background: pickedBiz?.id === biz.id ? "#F0FDF4" : "#fff",
+                      border: `1px solid ${pickedBiz?.id === biz.id ? "#BBF7D0" : "#E5E7EB"}`,
+                      borderRadius: 10, cursor: "pointer", textAlign: "left",
+                    }}
+                  >
+                    <div style={{ width: 36, height: 36, background: biz.bg_color, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, overflow: "hidden" }}>
+                      {biz.logo_image ? <img src={biz.logo_image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : biz.emoji}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#111827" }}>{biz.name}</div>
+                      <div style={{ fontSize: 11, color: "#9CA3AF" }}>{biz.address?.split(",")[0]}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {pickedBiz && !showBizPicker && (
+              <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: 12, marginTop: 4 }}>
+                <PhotoUploader
+                  key={`cover-${pickedBiz.id}`}
+                  label="📸 Обложка"
+                  hint="800 × 400 px · JPG, PNG · до 3 МБ"
+                  currentUrl={pickedBiz.cover_image}
+                  onSave={(file) => uploadBusinessCover(pickedBiz.id, file)}
+                />
+                <PhotoUploader
+                  key={`logo-${pickedBiz.id}`}
+                  label="🏷️ Логотип"
+                  hint="400 × 400 px · JPG, PNG · до 3 МБ"
+                  aspectSquare
+                  currentUrl={pickedBiz.logo_image}
+                  onSave={(file) => uploadBusinessLogo(pickedBiz.id, file)}
+                />
+              </div>
+            )}
+          </div>
         </div>
       )}
 

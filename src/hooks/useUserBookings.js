@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchUserBookings } from "../api/bookings";
+import { fetchUserBookings, processExpiredBookings } from "../api/bookings";
 
 export function useUserBookings(userId) {
   const [bookings, setBookings] = useState([]);
@@ -7,10 +7,14 @@ export function useUserBookings(userId) {
 
   useEffect(() => {
     if (!userId) { setLoading(false); return; }
-    fetchUserBookings(userId)
-      .then(setBookings)
+    processExpiredBookings(userId)
       .catch(console.error)
-      .finally(() => setLoading(false));
+      .finally(() =>
+        fetchUserBookings(userId)
+          .then(setBookings)
+          .catch(console.error)
+          .finally(() => setLoading(false))
+      );
   }, [userId]);
 
   return { bookings, loading };

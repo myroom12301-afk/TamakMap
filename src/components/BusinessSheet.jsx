@@ -38,10 +38,19 @@ export default function BusinessSheet({ biz: b, onClose, onDeal }) {
         {/* Scrollable content */}
         <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px 24px" }}>
 
+          {/* Обложка заведения */}
+          {b.cover_image && (
+            <div style={{ margin: "-12px -16px 14px", height: 140, overflow: "hidden" }}>
+              <img src={b.cover_image} alt={b.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
+          )}
+
           {/* Шапка заведения */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-            <div style={{ width: 56, height: 56, background: b.bg_color, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }}>
-              {b.emoji}
+            <div style={{ width: 56, height: 56, background: b.bg_color, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0, overflow: "hidden" }}>
+              {b.logo_image
+                ? <img src={b.logo_image} alt={b.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : b.emoji}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 17, fontWeight: 900, color: "#111827" }}>{b.name}</div>

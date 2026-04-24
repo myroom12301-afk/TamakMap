@@ -32,7 +32,7 @@ async function loadUser(authUser) {
     business = biz;
   }
 
-  return { id: authUser.id, email: authUser.email, name: profile.name, role: profile.role, business, businesses };
+  return { id: authUser.id, email: authUser.email, name: profile.name, role: profile.role, business, businesses, banned_until: profile.banned_until ?? null, consecutive_misses: profile.consecutive_misses ?? 0 };
 }
 
 export function useAuth() {

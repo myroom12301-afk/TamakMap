@@ -40,21 +40,28 @@ export async function addBusiness(ownerId, biz, coords) {
 export async function uploadBusinessCover(businessId, file) {
   const ext = file.name.split(".").pop().toLowerCase();
   const path = `${businessId}.${ext}`;
-
   const { error: upErr } = await supabase.storage
     .from("business-covers")
     .upload(path, file, { upsert: true, contentType: file.type });
   if (upErr) throw upErr;
-
   const { data } = supabase.storage.from("business-covers").getPublicUrl(path);
   const url = data.publicUrl;
-
-  const { error: updErr } = await supabase
-    .from("businesses")
-    .update({ cover_image: url })
-    .eq("id", businessId);
+  const { error: updErr } = await supabase.from("businesses").update({ cover_image: url }).eq("id", businessId);
   if (updErr) throw updErr;
+  return url;
+}
 
+export async function uploadBusinessLogo(businessId, file) {
+  const ext = file.name.split(".").pop().toLowerCase();
+  const path = `logo-${businessId}.${ext}`;
+  const { error: upErr } = await supabase.storage
+    .from("business-covers")
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (upErr) throw upErr;
+  const { data } = supabase.storage.from("business-covers").getPublicUrl(path);
+  const url = data.publicUrl;
+  const { error: updErr } = await supabase.from("businesses").update({ logo_image: url }).eq("id", businessId);
+  if (updErr) throw updErr;
   return url;
 }
 

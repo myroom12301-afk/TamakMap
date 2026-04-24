@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { useAuth } from "./hooks/useAuth";
 import { useBusinesses } from "./hooks/useBusinesses";
+import { useUserBookings } from "./hooks/useUserBookings";
 import { signOut } from "./api/auth";
 import { LOGO_URL } from "./constants";
 
@@ -34,6 +35,8 @@ export default function App() {
   const [showBooking, setShowBooking] = useState(false);
 
   const { businesses } = useBusinesses();
+  const { bookings } = useUserBookings(user?.id);
+  const activeBookingsCount = bookings.filter(b => b.status === "active").length;
 
   const isBiz = user?.role === "owner" || user?.role === "staff";
   const isDetailPage = page === "deal";
@@ -87,8 +90,15 @@ export default function App() {
           {user ? (
             <>
               <span style={{ fontSize: 13, color: "#374151", fontWeight: 700 }}>Привет, {user.name.split(" ")[0]}!</span>
-              <div onClick={() => setPage(profilePage)} style={{ width: 32, height: 32, background: "#F5920A", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, fontWeight: 900, cursor: "pointer" }}>
-                {user.name[0].toUpperCase()}
+              <div onClick={() => setPage(profilePage)} style={{ position: "relative", width: 32, height: 32, cursor: "pointer" }}>
+                <div style={{ width: 32, height: 32, background: "#F5920A", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, fontWeight: 900 }}>
+                  {user.name[0].toUpperCase()}
+                </div>
+                {activeBookingsCount > 0 && (
+                  <div style={{ position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, background: "#16A34A", borderRadius: 8, border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#fff", padding: "0 3px" }}>
+                    {activeBookingsCount}
+                  </div>
+                )}
               </div>
             </>
           ) : (

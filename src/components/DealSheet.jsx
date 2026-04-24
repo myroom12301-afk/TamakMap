@@ -31,6 +31,11 @@ export default function DealSheet({ deal, biz: b, onClose, onBook, isLoggedIn })
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 16px" }}>
+          {b.cover_image && (
+            <div style={{ margin: "-14px -16px 14px", height: 140, overflow: "hidden" }}>
+              <img src={b.cover_image} alt={b.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
+          )}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
             <div style={{ width: 44, height: 44, background: b.bg_color, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>
               {b.emoji}

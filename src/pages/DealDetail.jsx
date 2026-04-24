@@ -7,8 +7,10 @@ export default function DealDetail({ deal, biz: b, onBack, onBook, isLoggedIn })
 
   return (
     <div style={{ paddingBottom: 90 }}>
-      <div style={{ position: "relative", height: 130, background: b.bg_color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 60 }}>
-        {b.emoji}
+      <div style={{ position: "relative", height: 130, background: b.bg_color, overflow: "hidden" }}>
+        {b.cover_image && (
+          <img src={b.cover_image} alt={b.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        )}
         <button onClick={onBack} style={{ position: "absolute", top: 12, left: 12, background: "rgba(255,255,255,0.92)", border: "none", borderRadius: 20, padding: "5px 12px", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 4, color: "#374151" }}>
           <ArrowLeft size={13} /> Назад
         </button>

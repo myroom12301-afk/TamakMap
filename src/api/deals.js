@@ -11,6 +11,27 @@ function calcExpiresAt(timeWindow) {
   return expires.toISOString();
 }
 
+export async function uploadDealCover(dealId, file) {
+  const ext = file.name.split(".").pop().toLowerCase();
+  const path = `${dealId}.${ext}`;
+
+  const { error: upErr } = await supabase.storage
+    .from("deal-covers")
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (upErr) throw upErr;
+
+  const { data } = supabase.storage.from("deal-covers").getPublicUrl(path);
+  const url = data.publicUrl;
+
+  const { error: updErr } = await supabase
+    .from("deals")
+    .update({ cover_image: url })
+    .eq("id", dealId);
+  if (updErr) throw updErr;
+
+  return url;
+}
+
 export async function deactivateExpiredDeals(businessId) {
   const query = supabase
     .from("deals")

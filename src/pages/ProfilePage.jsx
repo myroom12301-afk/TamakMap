@@ -52,12 +52,29 @@ export default function ProfilePage({ user, onLogout, onLogin }) {
         </div>
       </div>
 
+      {/* Бан-баннер */}
+      {user.banned_until && new Date(user.banned_until) > new Date() && (() => {
+        const ms = new Date(user.banned_until) - Date.now();
+        const h = Math.ceil(ms / 3600000);
+        const days = Math.floor(h / 24);
+        const timeStr = days >= 1 ? `${days} дн. ${h % 24} ч.` : `${h} ч.`;
+        return (
+          <div style={{ margin: "12px 16px 0", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 12, padding: "12px 14px" }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#DC2626", marginBottom: 3 }}>⛔ Бронирование приостановлено</div>
+            <div style={{ fontSize: 12, color: "#9CA3AF" }}>
+              Вы не забрали заказ. Разблокировка через {timeStr}.
+              {user.consecutive_misses >= 2 && <span> Повторные пропуски увеличивают срок.</span>}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Статистика */}
       <div style={{ padding: "14px 16px 0", display: "flex", flexDirection: "column", gap: 10 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {[
             ["🛍️", bookings.length, "броней"],
-            ["⭐", bookings.length > 0 ? "4.9" : "—", "надёжность"],
+            ["⭐", bookings.length === 0 ? "—" : `${Math.round(doneBookings.length / bookings.length * 100)}%`, "надёжность"],
           ].map(([icon, val, label]) => (
             <div key={label} style={{ background: "#F8F7F4", borderRadius: 12, padding: 12, textAlign: "center" }}>
               <div style={{ fontSize: 18, marginBottom: 2 }}>{icon}</div>

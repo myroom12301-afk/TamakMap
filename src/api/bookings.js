@@ -4,7 +4,75 @@ function generateCode() {
   return `TM-${Math.floor(1000 + Math.random() * 9000)}`;
 }
 
+const BAN_DURATIONS = [
+  24 * 60 * 60 * 1000,       // 1 miss  → 24 ч
+  3  * 24 * 60 * 60 * 1000,  // 2 misses → 3 дня
+  7  * 24 * 60 * 60 * 1000,  // 3+ misses → 7 дней
+];
+
+function banDuration(consecutiveMisses) {
+  const idx = Math.min(consecutiveMisses - 1, BAN_DURATIONS.length - 1);
+  return BAN_DURATIONS[idx];
+}
+
+export async function processExpiredBookings(userId) {
+  const now = new Date().toISOString();
+
+  const { data } = await supabase
+    .from("bookings")
+    .select("id, deals(expires_at)")
+    .eq("user_id", userId)
+    .eq("status", "active");
+
+  if (!data?.length) return;
+
+  const missedIds = data
+    .filter(bk => bk.deals?.expires_at && bk.deals.expires_at < now)
+    .map(bk => bk.id);
+
+  if (!missedIds.length) return;
+
+  await supabase.from("bookings").update({ status: "missed" }).in("id", missedIds);
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("consecutive_misses")
+    .eq("id", userId)
+    .single();
+
+  const newMisses = (profile?.consecutive_misses || 0) + missedIds.length;
+  const bannedUntil = new Date(Date.now() + banDuration(newMisses)).toISOString();
+
+  await supabase
+    .from("profiles")
+    .update({ consecutive_misses: newMisses, banned_until: bannedUntil })
+    .eq("id", userId);
+}
+
 export async function createBooking({ userId, deal, biz, qty }) {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("banned_until, consecutive_misses")
+    .eq("id", userId)
+    .single();
+
+  if (profile?.banned_until && new Date(profile.banned_until) > new Date()) {
+    const h = Math.ceil((new Date(profile.banned_until) - Date.now()) / 3600000);
+    const days = Math.floor(h / 24);
+    const timeStr = days >= 1 ? `${days} дн.` : `${h} ч.`;
+    throw new Error(`Аккаунт временно заблокирован. Разблокировка через ${timeStr}`);
+  }
+
+  const { data: existing } = await supabase
+    .from("bookings")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("deal_id", deal.id)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (existing) throw new Error("Вы уже забронировали эту акцию");
+
   const code = generateCode();
 
   const { data, error } = await supabase
@@ -63,10 +131,19 @@ export async function fetchBusinessBookings(businessId) {
 }
 
 export async function markBookingDone(bookingId) {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("bookings")
     .update({ status: "done" })
-    .eq("id", bookingId);
+    .eq("id", bookingId)
+    .select("user_id")
+    .single();
 
   if (error) throw error;
+
+  if (data?.user_id) {
+    await supabase
+      .from("profiles")
+      .update({ consecutive_misses: 0, banned_until: null })
+      .eq("id", data.user_id);
+  }
 }

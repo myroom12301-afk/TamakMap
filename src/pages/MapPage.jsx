@@ -191,8 +191,10 @@ export default function MapPage({ businesses, onBusiness }) {
         )}
         {sorted.map(b => (
           <div key={b.id} onClick={() => onBusiness(b)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", borderBottom: "1px solid #F8F7F4", cursor: "pointer" }}>
-            <div style={{ width: 44, height: 44, background: b.bg_color, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>
-              {b.emoji}
+            <div style={{ width: 44, height: 44, background: b.bg_color, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0, overflow: "hidden" }}>
+              {b.logo_image
+                ? <img src={b.logo_image} alt={b.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : b.emoji}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: "#111827" }}>{b.name}</div>
