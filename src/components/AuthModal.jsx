@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { registerUser, registerOwner, signIn } from "../api/auth";
-import AddressInput from "./AddressInput";
 
 const inputStyle = {
   width: "100%",
@@ -18,7 +17,6 @@ export default function AuthModal({ onClose, onLogin, context }) {
   const [mode, setMode] = useState("register");
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [biz, setBiz] = useState({ name: "", type: "Пекарня", address: "", district: "Центр", description: "", whatsapp: "", email: "", password: "" });
-  const [bizCoords, setBizCoords] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -47,7 +45,7 @@ export default function AuthModal({ onClose, onLogin, context }) {
     if (!biz.name || !biz.email || !biz.password) { setError("Заполните название, email и пароль"); return; }
     setLoading(true);
     try {
-      const userData = await registerOwner({ email: biz.email, password: biz.password, biz, coords: bizCoords });
+      const userData = await registerOwner({ email: biz.email, password: biz.password, biz, coords: null });
       onLogin(userData);
       onClose();
     } catch (e) {
@@ -162,22 +160,11 @@ export default function AuthModal({ onClose, onLogin, context }) {
             </button>
             <h2 style={{ fontSize: 20, fontWeight: 900, color: "#111827", margin: "0 0 4px" }}>Регистрация заведения</h2>
             <p style={{ fontSize: 13, color: "#6B7280", margin: "0 0 16px" }}>Станьте партнёром TamakMap</p>
-            {[["Название заведения", "name"], ["Описание «О нас»", "description"], ["Номер WhatsApp", "whatsapp"]].map(([ph, key]) => (
-              <input key={key} placeholder={ph} value={biz[key]}
-                onChange={e => setBiz({ ...biz, [key]: e.target.value })} style={inputStyle} />
-            ))}
-            <AddressInput
-              value={biz.address}
-              onChange={v => setBiz({ ...biz, address: v })}
-              onCoords={c => setBizCoords(c)}
-            />
+            <input placeholder="Название заведения" value={biz.name}
+              onChange={e => setBiz({ ...biz, name: e.target.value })} style={inputStyle} />
             <select value={biz.type} onChange={e => setBiz({ ...biz, type: e.target.value })}
-              style={{ ...inputStyle, background: "#fff" }}>
+              style={{ ...inputStyle, background: "#fff", marginBottom: 14 }}>
               {["Пекарня", "Кофейня", "Кафе", "Ресторан", "Буфет"].map(t => <option key={t}>{t}</option>)}
-            </select>
-            <select value={biz.district} onChange={e => setBiz({ ...biz, district: e.target.value })}
-              style={{ ...inputStyle, marginBottom: 14, background: "#fff" }}>
-              {["Центр", "Свердловский", "Ленинский", "Октябрьский", "Первомайский"].map(d => <option key={d}>{d}</option>)}
             </select>
             <div style={{ borderTop: "1px solid #F0F0F0", paddingTop: 14, marginBottom: 4 }}>
               <p style={{ fontSize: 12, fontWeight: 700, color: "#6B7280", marginBottom: 10 }}>Данные для входа</p>
@@ -186,6 +173,9 @@ export default function AuthModal({ onClose, onLogin, context }) {
               <input type="password" placeholder="Пароль" value={biz.password}
                 onChange={e => setBiz({ ...biz, password: e.target.value })}
                 style={{ ...inputStyle, marginBottom: 16 }} />
+            </div>
+            <div style={{ background: "#EFF6FF", borderRadius: 10, padding: "9px 12px", marginBottom: 16, fontSize: 12, color: "#1D4ED8" }}>
+              📋 Адрес, описание и контакты заполните в личном кабинете после входа
             </div>
             {error && <p style={{ color: "#DC2626", fontSize: 13, marginBottom: 12 }}>{error}</p>}
             <button onClick={handleOwnerSubmit} disabled={loading}
