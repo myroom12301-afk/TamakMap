@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { fetchDeals, createDeal, deleteDeal } from "../api/deals";
-import { addBusiness, uploadBusinessCover, uploadBusinessLogo } from "../api/businesses";
+import { addBusiness, uploadBusinessCover, uploadBusinessLogo, updateBusiness } from "../api/businesses";
 import { createInviteCode, fetchInviteCodes } from "../api/invites";
 import { useBusinessBookings } from "../hooks/useBusinessBookings";
 import { markBookingDone } from "../api/bookings";
@@ -13,6 +13,7 @@ const OWNER_TABS = [
   { id: "overview", label: "Главная" },
   { id: "deals", label: "Акции" },
   { id: "bookings", label: "Брони" },
+  { id: "profile", label: "Профиль" },
   { id: "codes", label: "Коды" },
   { id: "photos", label: "Фото" },
 ];
@@ -81,7 +82,7 @@ const STAFF_TABS = [
   { id: "bookings", label: "Брони" },
 ];
 
-export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
+export default function BizDashboard({ user, onLogout, onBusinessAdded, onBusinessUpdated }) {
   const isOwner = user?.role === "owner";
   const isStaff = user?.role === "staff";
   const businesses = isOwner ? (user?.businesses || (user?.business ? [user.business] : [])) : (user?.business ? [user.business] : []);
@@ -109,6 +110,14 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
   const [bizSaving, setBizSaving] = useState(false);
   const [bizError, setBizError] = useState("");
 
+  const [profileForm, setProfileForm] = useState({});
+  const [profileCoords, setProfileCoords] = useState(null);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileSaved, setProfileSaved] = useState(false);
+
+  const [copiedId, setCopiedId] = useState(null);
+
   const { bookings, setBookings, loading: bookingsLoading } = useBusinessBookings(b?.id);
 
   useEffect(() => {
@@ -123,6 +132,22 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
       fetchInviteCodes(b.id).then(c => { setCodes(c); setCodesLoading(false); });
     }
   }, [tab, b?.id]);
+
+  useEffect(() => {
+    if (b) {
+      setProfileForm({
+        name: b.name || "",
+        type: b.type || "Пекарня",
+        address: b.address || "",
+        district: b.district || "Центр",
+        description: b.description || "",
+        whatsapp: b.phone || "",
+      });
+      setProfileCoords(b.lat && b.lng ? { lat: b.lat, lng: b.lng } : null);
+      setProfileError("");
+      setProfileSaved(false);
+    }
+  }, [b?.id]);
 
   if (!b) return (
     <div style={{ padding: 32, textAlign: "center", color: "#9CA3AF" }}>
@@ -182,6 +207,23 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
       setBizError(e.message);
     } finally {
       setBizSaving(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!profileForm.name) { setProfileError("Введите название"); return; }
+    setProfileSaving(true);
+    setProfileError("");
+    setProfileSaved(false);
+    try {
+      const updated = await updateBusiness(b.id, profileForm, profileCoords);
+      onBusinessUpdated?.(updated);
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 2500);
+    } catch (e) {
+      setProfileError(e.message);
+    } finally {
+      setProfileSaving(false);
     }
   };
 
@@ -264,6 +306,14 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
       {/* Главная */}
       {tab === "overview" && (
         <div style={{ padding: 16 }}>
+          {!b.address && (
+            <div style={{ background: "#FEF9C3", border: "1px solid #FDE68A", borderRadius: 12, padding: "10px 14px", marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 13, color: "#92400E", fontWeight: 700 }}>⚠️ Заполните профиль заведения</span>
+              <button onClick={() => setTab("profile")} style={{ background: "#D97706", color: "#fff", border: "none", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 800, cursor: "pointer", flexShrink: 0 }}>
+                Заполнить →
+              </button>
+            </div>
+          )}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, background: "#F0FDF4", borderRadius: 14, padding: 12 }}>
             <div style={{ width: 42, height: 42, background: b.bg_color, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>{b.emoji}</div>
             <div>
@@ -380,6 +430,74 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
         </div>
       )}
 
+      {/* Профиль */}
+      {tab === "profile" && (
+        <div style={{ padding: 16 }}>
+          <h2 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 800, color: "#111827" }}>Профиль заведения</h2>
+
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#374151", marginBottom: 4 }}>Название</div>
+          <input
+            placeholder="Название"
+            value={profileForm.name || ""}
+            onChange={e => setProfileForm({ ...profileForm, name: e.target.value })}
+            style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 13, marginBottom: 12, boxSizing: "border-box", fontFamily: "inherit" }}
+          />
+
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#374151", marginBottom: 4 }}>Тип</div>
+          <select
+            value={profileForm.type || "Пекарня"}
+            onChange={e => setProfileForm({ ...profileForm, type: e.target.value })}
+            style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 13, marginBottom: 12, background: "#fff", fontFamily: "inherit" }}
+          >
+            {["Пекарня", "Кофейня", "Кафе", "Ресторан", "Буфет"].map(t => <option key={t}>{t}</option>)}
+          </select>
+
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#374151", marginBottom: 4 }}>Район</div>
+          <select
+            value={profileForm.district || "Центр"}
+            onChange={e => setProfileForm({ ...profileForm, district: e.target.value })}
+            style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 13, marginBottom: 12, background: "#fff", fontFamily: "inherit" }}
+          >
+            {["Центр", "Восток-5", "Джал", "Южные магистрали", "Аламедин", "Асанбай"].map(d => <option key={d}>{d}</option>)}
+          </select>
+
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#374151", marginBottom: 4 }}>Адрес</div>
+          <AddressInput
+            value={profileForm.address || ""}
+            onChange={v => setProfileForm({ ...profileForm, address: v })}
+            onCoords={c => setProfileCoords(c)}
+          />
+
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#374151", marginBottom: 4, marginTop: 4 }}>Описание</div>
+          <textarea
+            placeholder="Коротко о заведении"
+            value={profileForm.description || ""}
+            onChange={e => setProfileForm({ ...profileForm, description: e.target.value })}
+            rows={3}
+            style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 13, marginBottom: 12, boxSizing: "border-box", fontFamily: "inherit", resize: "vertical" }}
+          />
+
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#374151", marginBottom: 4 }}>WhatsApp</div>
+          <input
+            placeholder="+996 700 000 000"
+            value={profileForm.whatsapp || ""}
+            onChange={e => setProfileForm({ ...profileForm, whatsapp: e.target.value })}
+            style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 13, marginBottom: 16, boxSizing: "border-box", fontFamily: "inherit" }}
+          />
+
+          {profileError && <p style={{ color: "#DC2626", fontSize: 12, marginBottom: 10 }}>{profileError}</p>}
+          {profileSaved && <p style={{ color: "#16A34A", fontSize: 13, fontWeight: 800, marginBottom: 10 }}>Сохранено ✓</p>}
+
+          <button
+            onClick={handleSaveProfile}
+            disabled={profileSaving}
+            style={{ width: "100%", padding: "13px", background: profileSaving ? "#9CA3AF" : "#16A34A", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: profileSaving ? "not-allowed" : "pointer" }}
+          >
+            {profileSaving ? "Сохранение..." : "Сохранить"}
+          </button>
+        </div>
+      )}
+
       {/* Коды приглашений */}
       {tab === "codes" && (
         <div style={{ padding: 16 }}>
@@ -390,18 +508,35 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded }) {
             </button>
           </div>
           <div style={{ background: "#FEF3C7", borderRadius: 12, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: "#92400E" }}>
-            🔑 Передайте код сотруднику — он вводит его при регистрации. Каждый код одноразовый.
+            🔑 Сгенерируйте код и отправьте сотруднику ссылку — он регистрируется по одному клику.
           </div>
           {codesLoading ? (
             <div style={{ textAlign: "center", padding: "32px", color: "#9CA3AF" }}>Загрузка...</div>
           ) : codes.length === 0 ? (
             <div style={{ textAlign: "center", padding: "32px", color: "#9CA3AF", fontSize: 14 }}>Нет кодов — создайте первый</div>
           ) : codes.map(c => (
-            <div key={c.id} style={{ background: "#fff", border: `1px solid ${c.used ? "#E5E7EB" : "#FDE68A"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 18, fontWeight: 900, fontFamily: "monospace", letterSpacing: 3, color: c.used ? "#9CA3AF" : "#111827" }}>{c.code}</span>
-              <span style={{ fontSize: 11, fontWeight: 800, background: c.used ? "#F3F4F6" : "#FEF3C7", color: c.used ? "#9CA3AF" : "#92400E", borderRadius: 20, padding: "4px 10px" }}>
-                {c.used ? "Использован" : "Активен"}
-              </span>
+            <div key={c.id} style={{ background: "#fff", border: `1px solid ${c.used ? "#E5E7EB" : "#FDE68A"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: c.used ? 0 : 8 }}>
+                <span style={{ fontSize: 18, fontWeight: 900, fontFamily: "monospace", letterSpacing: 3, color: c.used ? "#9CA3AF" : "#111827" }}>{c.code}</span>
+                <span style={{ fontSize: 11, fontWeight: 800, background: c.used ? "#F3F4F6" : "#FEF3C7", color: c.used ? "#9CA3AF" : "#92400E", borderRadius: 20, padding: "4px 10px" }}>
+                  {c.used ? "Использован" : "Активен"}
+                </span>
+              </div>
+              {!c.used && (
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`https://tamakmap.kg/invite/${c.code}`)
+                      .then(() => {
+                        setCopiedId(c.id);
+                        setTimeout(() => setCopiedId(null), 2000);
+                      })
+                      .catch(() => {});
+                  }}
+                  style={{ width: "100%", padding: "7px", background: copiedId === c.id ? "#DCFCE7" : "#F3F4F6", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer", color: copiedId === c.id ? "#15803D" : "#374151" }}
+                >
+                  {copiedId === c.id ? "Скопировано ✓" : "Скопировать ссылку"}
+                </button>
+              )}
             </div>
           ))}
         </div>

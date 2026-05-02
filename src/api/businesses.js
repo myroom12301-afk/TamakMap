@@ -65,6 +65,26 @@ export async function uploadBusinessLogo(businessId, file) {
   return url;
 }
 
+export async function updateBusiness(bizId, fields, coords) {
+  const patch = {
+    name: fields.name,
+    type: fields.type,
+    address: fields.address,
+    district: fields.district,
+    description: fields.description,
+    phone: fields.whatsapp,
+  };
+  if (coords) { patch.lat = coords.lat; patch.lng = coords.lng; }
+  const { data, error } = await supabase
+    .from("businesses")
+    .update(patch)
+    .eq("id", bizId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function fetchBusinesses() {
   // best-effort: деактивируем просроченные (молча, если нет прав)
   supabase
@@ -77,6 +97,8 @@ export async function fetchBusinesses() {
   const { data, error } = await supabase
     .from("businesses")
     .select(`*, deals (*), reviews (rating)`)
+    .not("address", "is", null)
+    .neq("address", "")
     .order("created_at", { ascending: false });
 
   if (error) throw error;

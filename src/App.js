@@ -17,6 +17,7 @@ import MapPage from "./pages/MapPage";
 import ProfilePage from "./pages/ProfilePage";
 import BizDashboard from "./pages/BizDashboard";
 import DealDetail from "./pages/DealDetail";
+import InvitePage from "./pages/InvitePage";
 
 const NAV_ITEMS = [
   { id: "home", label: "Главная", icon: "🏠" },
@@ -73,6 +74,9 @@ export default function App() {
     setPage("home");
   };
 
+  const inviteCode = new URLSearchParams(window.location.search).get("invite");
+  if (inviteCode) return <InvitePage code={inviteCode} />;
+
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "#FAFAF8" }}>
       <div style={{ textAlign: "center" }}>
@@ -124,7 +128,16 @@ export default function App() {
         {page === "home"      && <HomePage      businesses={businesses} onBusiness={goToBiz} onDeal={goToDeal} />}
         {page === "map"       && <MapPage        businesses={businesses} onBusiness={goToBiz} />}
         {page === "profile"   && <ProfilePage    user={user} onLogout={handleLogout} onLogin={() => setShowAuth(true)} />}
-        {page === "dashboard" && <BizDashboard   user={user} onLogout={handleLogout} onBusinessAdded={(biz) => setUser(u => ({ ...u, businesses: [...(u.businesses || []), biz], business: u.business || biz }))} />}
+        {page === "dashboard" && <BizDashboard
+          user={user}
+          onLogout={handleLogout}
+          onBusinessAdded={(biz) => setUser(u => ({ ...u, businesses: [...(u.businesses || []), biz], business: u.business || biz }))}
+          onBusinessUpdated={(upd) => setUser(u => ({
+            ...u,
+            businesses: (u.businesses || []).map(b => b.id === upd.id ? upd : b),
+            business: u.business?.id === upd.id ? upd : u.business,
+          }))}
+        />}
         {page === "deal" && selDeal && <DealDetail deal={selDeal} biz={selDealBiz || selBiz} onBack={handleBack} onBook={handleBook} isLoggedIn={!!user} />}
       </div>
 
