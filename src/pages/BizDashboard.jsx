@@ -147,6 +147,7 @@ export default function BizDashboard({ user, onLogout, onBusinessAdded, onBusine
       setProfileError("");
       setProfileSaved(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [b?.id]);
 
   if (!b) return (
