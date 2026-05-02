@@ -33,6 +33,7 @@ export default function App() {
   const [showDealSheet, setShowDealSheet] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
+  const [authContext, setAuthContext] = useState(null); // "deal" | null
 
   const { businesses } = useBusinesses();
   const { bookings } = useUserBookings(user?.id);
@@ -47,46 +48,54 @@ export default function App() {
   const goToBiz = (b) => { setSelBiz(b); setShowBizSheet(true); };
   const goToDeal = (d, b) => { setShowBizSheet(false); setSelDeal(d); setSelDealBiz(b); setShowDealSheet(true); };
   const handleBack = () => { setPage("home"); };
-  const handleBook = () => user ? setShowBooking(true) : setShowAuth(true);
-  const handleLogout = async () => { await signOut(); setPage("home"); };
-  const handleLogin = (u) => { setUser(u); if (u.role === "owner" || u.role === "staff") setPage("dashboard"); };
+
+  const handleBook = () => {
+    if (!user) {
+      setAuthContext("deal");
+      setShowAuth(true);
+      return;
+    }
+    setShowBooking(true);
+  };
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+    // После логина — если был контекст брони, сразу открываем бронирование
+    if (authContext === "deal" && selDeal) {
+      setShowBooking(true);
+    }
+    setAuthContext(null);
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    setUser(null);
+    setPage("home");
+  };
 
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "#FAFAF8" }}>
       <div style={{ textAlign: "center" }}>
-        <img src={LOGO_URL} alt="TamakMap" style={{ width: 80, height: 80, objectFit: "contain", borderRadius: 20, marginBottom: 16 }} />
-        <div style={{ fontSize: 14, color: "#9CA3AF", fontWeight: 700 }}>Загрузка...</div>
+        <img src={LOGO_URL} alt="TamakMap" style={{ width: 64, height: 64, borderRadius: 16, marginBottom: 12 }} />
+        <div style={{ fontSize: 13, color: "#9CA3AF" }}>Загрузка...</div>
       </div>
     </div>
   );
 
   return (
-    <div style={{ fontFamily: "'Nunito', 'Segoe UI', sans-serif", maxWidth: 480, margin: "0 auto", background: "#FAFAF8", minHeight: "100vh", position: "relative" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
-        * { box-sizing: border-box; margin: 0; }
-        ::-webkit-scrollbar { display: none; }
-        input, select, button { font-family: inherit; }
-        .leaflet-control-attribution { display: none; }
-      `}</style>
-
+    <div style={{ maxWidth: 480, margin: "0 auto", background: "#FAFAF8", minHeight: "100vh", position: "relative" }}>
       {/* Header */}
-      <div style={{ position: "sticky", top: 0, zIndex: 200, background: "#fff", borderBottom: "1px solid #F0F0F0", padding: "0 16px", height: 72, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {isDetailPage ? (
-            <button onClick={handleBack} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, color: "#374151", fontSize: 14, fontWeight: 800, padding: 0 }}>
-              <ArrowLeft size={16} /> Назад
-            </button>
-          ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <img src={LOGO_URL} alt="TamakMap" style={{ width: 90, height: 90, objectFit: "contain", borderRadius: 16 }} />
-              <span style={{ fontSize: 20, fontWeight: 900, color: "#1a1a1a" }}>Tamak</span>
-              <span style={{ fontSize: 20, fontWeight: 900, color: "#F5920A" }}>Map</span>
-              <span style={{ fontSize: 10, background: "#FEF3C7", color: "#92400E", borderRadius: 6, padding: "2px 7px", fontWeight: 800 }}>BETA</span>
-            </div>
-          )}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 200, background: "#fff", borderBottom: "1px solid #F0F0F0" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {isDetailPage && (
+              <button onClick={handleBack} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 6px 4px 0" }}>
+                <ArrowLeft size={20} color="#374151" />
+              </button>
+            )}
+            <img src={LOGO_URL} alt="TamakMap" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "contain" }} />
+            <span style={{ fontSize: 17, fontWeight: 900, color: "#111827" }}>TamakMap</span>
+          </div>
           {user ? (
             <>
               <span style={{ fontSize: 13, color: "#374151", fontWeight: 700 }}>Привет, {user.name.split(" ")[0]}!</span>
@@ -156,7 +165,13 @@ export default function App() {
       )}
 
       {/* Modals */}
-      {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={handleLogin} />}
+      {showAuth && (
+        <AuthModal
+          onClose={() => { setShowAuth(false); setAuthContext(null); }}
+          onLogin={handleLogin}
+          context={authContext}
+        />
+      )}
       {showBooking && selDeal && (
         <BookingModal
           deal={selDeal}

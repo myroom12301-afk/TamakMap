@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { registerUser, registerOwner, registerStaff, signIn } from "../api/auth";
+import { registerUser, registerOwner, signIn } from "../api/auth";
 import AddressInput from "./AddressInput";
 
 const inputStyle = {
@@ -13,13 +13,12 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
-export default function AuthModal({ onClose, onLogin }) {
+export default function AuthModal({ onClose, onLogin, context }) {
   const [step, setStep] = useState("role");
   const [mode, setMode] = useState("register");
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [biz, setBiz] = useState({ name: "", type: "Пекарня", address: "", district: "Центр", description: "", whatsapp: "", email: "", password: "" });
   const [bizCoords, setBizCoords] = useState(null);
-  const [staff, setStaff] = useState({ name: "", email: "", password: "", inviteCode: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -58,24 +57,6 @@ export default function AuthModal({ onClose, onLogin }) {
     }
   };
 
-  const handleStaffSubmit = async () => {
-    setError("");
-    if (!staff.name || !staff.email || !staff.password || !staff.inviteCode) {
-      setError("Заполните все поля");
-      return;
-    }
-    setLoading(true);
-    try {
-      const userData = await registerStaff(staff);
-      onLogin(userData);
-      onClose();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 1000, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
@@ -84,18 +65,25 @@ export default function AuthModal({ onClose, onLogin }) {
       <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 480, maxHeight: "88vh", overflowY: "auto", padding: "16px 20px 36px" }}>
         <div style={{ width: 36, height: 4, background: "#E5E7EB", borderRadius: 2, margin: "0 auto 20px" }} />
 
+        {/* Баннер контекста — показывается когда открыт из брони */}
+        {context === "deal" && step === "role" && (
+          <div style={{ background: "#FEF3C7", borderRadius: 12, padding: "10px 14px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#92400E", fontWeight: 600 }}>
+            <span style={{ fontSize: 20 }}>🔒</span>
+            <span>Войдите или зарегистрируйтесь, чтобы забронировать акцию</span>
+          </div>
+        )}
+
         {/* Выбор роли */}
         {step === "role" && (
           <>
             <div style={{ textAlign: "center", marginBottom: 24 }}>
               <h2 style={{ margin: "0 0 6px", fontSize: 20, fontWeight: 900, color: "#111827" }}>Добро пожаловать</h2>
-              <p style={{ margin: 0, fontSize: 14, color: "#6B7280" }}>Кто вы в TamakMap?</p>
+              <p style={{ margin: 0, fontSize: 14, color: "#6B7280" }}>Выберите тип аккаунта</p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {[
-                ["👤", "Я покупатель", "Ищу акции и скидки рядом", "user-form", "#F0FDF4", "#BBF7D0"],
-                ["🏢", "Я владелец сети", "Управляю несколькими точками", "owner-form", "#EFF6FF", "#BFDBFE"],
-                ["👨‍🍳", "Я сотрудник точки", "Есть код приглашения от владельца", "staff-form", "#FEF3C7", "#FDE68A"],
+                ["👤", "Пользователь", "Ищу акции и скидки рядом", "user-form", "#F0FDF4", "#BBF7D0"],
+                ["🏪", "Заведение / Партнёр", "Хочу продавать остатки со скидкой", "owner-form", "#EFF6FF", "#BFDBFE"],
               ].map(([icon, title, desc, next, bg, border]) => (
                 <button key={next} onClick={() => setStep(next)}
                   style={{ padding: 16, background: bg, border: `2px solid ${border}`, borderRadius: 14, cursor: "pointer", textAlign: "left" }}>
@@ -136,14 +124,14 @@ export default function AuthModal({ onClose, onLogin }) {
           </>
         )}
 
-        {/* Регистрация покупателя */}
+        {/* Регистрация пользователя */}
         {step === "user-form" && (
           <>
             <button onClick={() => back()} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280", fontSize: 13, marginBottom: 12, display: "flex", alignItems: "center", gap: 4, fontWeight: 700 }}>
               <ArrowLeft size={13} /> Назад
             </button>
             <h2 style={{ fontSize: 20, fontWeight: 900, color: "#111827", margin: "0 0 4px" }}>Регистрация</h2>
-            <p style={{ fontSize: 13, color: "#6B7280", margin: "0 0 20px" }}>Аккаунт покупателя</p>
+            <p style={{ fontSize: 13, color: "#6B7280", margin: "0 0 20px" }}>Аккаунт пользователя</p>
             <input placeholder="Имя / Ник" value={form.name}
               onChange={e => setForm({ ...form, name: e.target.value })} style={inputStyle} />
             <input type="email" placeholder="Email" value={form.email}
@@ -156,17 +144,24 @@ export default function AuthModal({ onClose, onLogin }) {
               style={{ width: "100%", padding: 13, background: loading ? "#9CA3AF" : "#16A34A", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}>
               {loading ? "Загрузка..." : "Зарегистрироваться"}
             </button>
+            <div style={{ textAlign: "center", marginTop: 12 }}>
+              <span style={{ fontSize: 13, color: "#6B7280" }}>Уже есть аккаунт? </span>
+              <button onClick={() => { setStep("login"); setMode("login"); }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#16A34A", fontWeight: 800, fontSize: 13 }}>
+                Войти
+              </button>
+            </div>
           </>
         )}
 
-        {/* Регистрация владельца */}
+        {/* Регистрация заведения */}
         {step === "owner-form" && (
           <>
             <button onClick={() => back()} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280", fontSize: 13, marginBottom: 12, display: "flex", alignItems: "center", gap: 4, fontWeight: 700 }}>
               <ArrowLeft size={13} /> Назад
             </button>
-            <h2 style={{ fontSize: 20, fontWeight: 900, color: "#111827", margin: "0 0 4px" }}>Регистрация владельца</h2>
-            <p style={{ fontSize: 13, color: "#6B7280", margin: "0 0 16px" }}>Первая точка сети</p>
+            <h2 style={{ fontSize: 20, fontWeight: 900, color: "#111827", margin: "0 0 4px" }}>Регистрация заведения</h2>
+            <p style={{ fontSize: 13, color: "#6B7280", margin: "0 0 16px" }}>Станьте партнёром TamakMap</p>
             {[["Название заведения", "name"], ["Описание «О нас»", "description"], ["Номер WhatsApp", "whatsapp"]].map(([ph, key]) => (
               <input key={key} placeholder={ph} value={biz[key]}
                 onChange={e => setBiz({ ...biz, [key]: e.target.value })} style={inputStyle} />
@@ -196,38 +191,6 @@ export default function AuthModal({ onClose, onLogin }) {
             <button onClick={handleOwnerSubmit} disabled={loading}
               style={{ width: "100%", padding: 13, background: loading ? "#9CA3AF" : "#2563EB", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}>
               {loading ? "Загрузка..." : "Зарегистрировать"}
-            </button>
-          </>
-        )}
-
-        {/* Регистрация сотрудника */}
-        {step === "staff-form" && (
-          <>
-            <button onClick={() => back()} style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280", fontSize: 13, marginBottom: 12, display: "flex", alignItems: "center", gap: 4, fontWeight: 700 }}>
-              <ArrowLeft size={13} /> Назад
-            </button>
-            <h2 style={{ fontSize: 20, fontWeight: 900, color: "#111827", margin: "0 0 4px" }}>Вход как сотрудник</h2>
-            <p style={{ fontSize: 13, color: "#6B7280", margin: "0 0 16px" }}>Введите код от владельца</p>
-            <div style={{ background: "#FEF3C7", borderRadius: 12, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#92400E", fontWeight: 600 }}>
-              🔑 Код выдаётся владельцем сети в личном кабинете
-            </div>
-            <input
-              placeholder="Код приглашения (напр. ABC123)"
-              value={staff.inviteCode}
-              onChange={e => setStaff({ ...staff, inviteCode: e.target.value.toUpperCase() })}
-              style={{ ...inputStyle, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase" }}
-            />
-            <input placeholder="Ваше имя" value={staff.name}
-              onChange={e => setStaff({ ...staff, name: e.target.value })} style={inputStyle} />
-            <input type="email" placeholder="Email" value={staff.email}
-              onChange={e => setStaff({ ...staff, email: e.target.value })} style={inputStyle} />
-            <input type="password" placeholder="Пароль" value={staff.password}
-              onChange={e => setStaff({ ...staff, password: e.target.value })}
-              style={{ ...inputStyle, marginBottom: 16 }} />
-            {error && <p style={{ color: "#DC2626", fontSize: 13, marginBottom: 12 }}>{error}</p>}
-            <button onClick={handleStaffSubmit} disabled={loading}
-              style={{ width: "100%", padding: 13, background: loading ? "#9CA3AF" : "#D97706", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}>
-              {loading ? "Проверка кода..." : "Войти как сотрудник"}
             </button>
           </>
         )}
