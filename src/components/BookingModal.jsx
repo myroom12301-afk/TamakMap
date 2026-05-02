@@ -1,24 +1,20 @@
 import { useState } from "react";
-import { createBooking } from "../api/bookings";
+
+function generateCode() {
+  return `TM-${Math.floor(1000 + Math.random() * 9000)}`;
+}
 
 export default function BookingModal({ deal, biz: b, user, onClose, onBooked }) {
   const [qty, setQty] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [booking, setBooking] = useState(null);
 
-  const handleConfirm = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const data = await createBooking({ userId: user.id, deal, biz: b, qty });
-      setBooking(data);
-      if (onBooked) onBooked(qty);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
+  const handleConfirm = () => {
+    // Генерируем код локально
+    const code = generateCode();
+    // Показываем подтверждение
+    setBooking({ code, qty });
+    // Уменьшаем remaining в App.js
+    if (onBooked) onBooked(qty);
   };
 
   if (booking) return (
@@ -35,7 +31,7 @@ export default function BookingModal({ deal, biz: b, user, onClose, onBooked }) 
         </div>
         <div style={{ background: "#F8F7F4", borderRadius: 12, padding: "12px", marginBottom: 20, fontSize: 13, color: "#374151", lineHeight: 1.7 }}>
           🕐 Придите с <strong>{deal.time_window}</strong><br />
-          📍 {b.address.split(",")[0]}<br />
+          📍 {b.address?.split(",")[0] || "Адрес"}<br />
           💰 Оплата наличкой: <strong>{deal.price_after * qty} сом</strong>
         </div>
         <button onClick={onClose} style={{ width: "100%", padding: 14, background: "#16A34A", color: "#fff", border: "none", borderRadius: 14, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
@@ -67,7 +63,7 @@ export default function BookingModal({ deal, biz: b, user, onClose, onBooked }) 
             ["Итого", `${deal.price_after * qty} сом`],
             ["Экономия", `${(deal.price_before - deal.price_after) * qty} сом`],
             ["Время получения", deal.time_window],
-            ["Адрес", b.address.split(",")[0]],
+            ["Адрес", b.address?.split(",")[0] || "Адрес"],
           ].map(([k, v]) => (
             <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: 13 }}>
               <span style={{ color: "#6B7280" }}>{k}</span>
@@ -76,13 +72,11 @@ export default function BookingModal({ deal, biz: b, user, onClose, onBooked }) 
           ))}
         </div>
 
-        {error && <p style={{ color: "#DC2626", fontSize: 13, marginBottom: 12, textAlign: "center" }}>{error}</p>}
-
         <p style={{ fontSize: 11, color: "#9CA3AF", textAlign: "center", margin: "0 0 12px" }}>
           Оплата наличкой при получении. Бесплатная отмена за 2 часа.
         </p>
-        <button onClick={handleConfirm} disabled={loading} style={{ width: "100%", padding: 13, background: loading ? "#9CA3AF" : "#16A34A", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}>
-          {loading ? "Оформление..." : "Подтвердить бронь"}
+        <button onClick={handleConfirm} style={{ width: "100%", padding: 13, background: "#16A34A", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
+          Подтвердить бронь
         </button>
       </div>
     </div>
